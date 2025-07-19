@@ -1,0 +1,226 @@
+Wall-Related Methods
+AddWallStyle
+Signature: Guid AddWallStyle(string name)
+Description: Creates a new wall style and returns its Guid.
+Example: style_id = va.AddWallStyle("MyWall")
+Notes: Check existence first with va.GetAllWallStyleIds() to list existing styles (returns list of Guids; use va.GetStyleName(id) to match names). Use va.GetWallStyleId(name) for direct lookup.
+AddWallLayer
+Signature: Guid AddWallLayer(Guid wallStyleId, string name, double thickness)
+Description: Adds a layer to the wall style, returns the layer component's Guid.
+Example: layer_id = va.AddWallLayer(style_id, "Brick Layer", 0.1)
+Notes: Layers ordered from exterior to interior. Assign material with SetStyleComponentMaterialIndex. Set type with SetWallLayerType (Core/Normal). Set wrapping with SetWallLayerWrapping (locations: ends/openings). Core layers cannot wrap.
+SetWallStyleHeight
+Signature: Boolean SetWallStyleHeight(Guid styleId, Double height)
+Description: Sets the default height for the wall style. Returns True on success.
+Example: success = va.SetWallStyleHeight(style_id, 4.0)
+Notes: Applies to new walls created with the style. Existing walls may need individual SetWallHeight calls.
+AddWallsFromCurves
+Signature: Guid[] AddWallsFromCurves(Guid styleId, IEnumerable`1 curves) # curves is IEnumerable<Rhino.Geometry.Curve>
+Description: Creates walls from a list of curves using the specified style, returns array of wall Guids.
+Example: import rhinoscriptsyntax as rs from Rhino.Geometry import Curve curve_ids = rs.GetObjects("Select curves", 4) # 4 = curve filter curves = [rs.coercecurve(id) for id in curve_ids] wall_ids = va.AddWallsFromCurves(style_id, curves)
+Notes: Curves should be planar and open for wall paths. Height and alignment default from style; modify post-creation if needed.
+SetWallLayerWrapping
+Signature: Boolean SetWallLayerWrapping(Guid wallLayerId, WallLayerWrapping wrapping)
+Description: Sets the wrapping locations for a wall layer (e.g., at ends, openings, both, or none). Returns True on success.
+Example:
+ For Ends and Openings
+ success = va.SetWallLayerWrapping(layer_id, va.WallLayerWrapping.Ends | va.WallLayerWrapping.Openings)
+ For None
+ success = va.SetWallLayerWrapping(layer_id, va.WallLayerWrapping.None)
+Notes: [Flags] enum; combine with | (bitwise OR). Wrapping direction (Exterior/Interior/None) set at style level. Core layers ignore wrapping.
+GetWallLayerWrapping
+Signature: WallLayerWrapping GetWallLayerWrapping(Guid wallLayerId)
+Description: Gets the wrapping locations for a wall layer.
+Example: wrapping = va.GetWallLayerWrapping(layer_id) if wrapping & va.WallLayerWrapping.Ends: print("Wraps at ends")
+ Check combinations similarly
+SetWallLayerType
+Signature: Boolean SetWallLayerType(Guid wallLayerId, WallLayerType type)
+Description: Sets the type for a wall layer (Normal or Core). Returns True on success.
+Example: success = va.SetWallLayerType(layer_id, va.WallLayerType.Core)
+Notes: Core = structural, non-wrappable. Normal = finish, wrappable.
+GetWallLayerType
+Signature: WallLayerType GetWallLayerType(Guid wallLayerId)
+Description: Gets the type for a wall layer.
+Example: layer_type = va.GetWallLayerType(layer_id) print(layer_type) # e.g., Core
+SetWallAlignment
+Signature: Boolean SetWallAlignment(Guid wallId, WallAlignment alignment) # wallId is instance Guid
+Description: Sets the alignment for a wall instance (Left, Center, Right relative to path). Returns True on success.
+Example: success = va.SetWallAlignment(wall_id, va.WallAlignment.Center)
+Notes: Alignment is per instance; styles may have default (set via creation or UI). Left/Right depend on curve direction (e.g., Left might be interior if drawn one way; test orientation).
+GetWallAlignment
+Signature: WallAlignment GetWallAlignment(Guid wallId)
+Description: Gets the alignment for a wall instance.
+Example: alignment = va.GetWallAlignment(wall_id) print(alignment) # e.g., Center
+SetWallAlignmentOffset
+Signature: Boolean SetWallAlignmentOffset(Guid wallId, Double offset)
+Description: Sets the alignment offset for a wall instance (fine-tune position relative to alignment). Returns True on success.
+Example: success = va.SetWallAlignmentOffset(wall_id, 0.05) # e.g., 5cm offset
+Notes: Offset in document units; positive/negative depending on direction.
+GetWallAlignmentOffset
+Signature: Double GetWallAlignmentOffset(Guid wallId)
+Description: Gets the alignment offset for a wall instance.
+Example: offset = va.GetWallAlignmentOffset(wall_id)
+GetWallLayerThickness
+Signatures (Overloads):
+Double GetWallLayerThickness(Guid wallLayerId) # For style layer
+Double GetWallLayerThickness(Guid wallId, Guid wallLayerId) # For instance layer
+Description: Gets the thickness of a wall layer, either from style or specific wall instance.
+Example:
+ Style layer
+ thickness = va.GetWallLayerThickness(layer_id)
+ Instance layer
+ instance_thickness = va.GetWallLayerThickness(wall_id, layer_id)
+SetWallLayerThickness
+Signatures (Overloads):
+Boolean SetWallLayerThickness(Guid wallLayerId, Double thickness) # For style layer
+Boolean SetWallLayerThickness(Guid wallId, Guid wallLayerId, Double thickness) # For instance layer
+Description: Sets the thickness of a wall layer, either in style (affects all) or specific instance. Returns True on success.
+Example:
+ Style layer
+ success = va.SetWallLayerThickness(layer_id, 0.15)
+ Instance layer
+ success = va.SetWallLayerThickness(wall_id, layer_id, 0.12)
+Notes: Instance overrides allow per-wall customization without changing style.
+GetWallLayerThicknessSource
+Signature: ValueSource GetWallLayerThicknessSource(Guid wallId, Guid wallLayerId)
+Description: Gets the source for a layer's thickness in a wall instance.
+Example: source = va.GetWallLayerThicknessSource(wall_id, layer_id) print(source) # e.g., Style
+SetWallLayerThicknessSource
+Signature: Boolean SetWallLayerThicknessSource(Guid wallId, Guid wallLayerId, ValueSource source)
+Description: Sets the source for a layer's thickness in a wall instance. Returns True on success.
+Example: success = va.SetWallLayerThicknessSource(wall_id, layer_id, va.ValueSource.Object) # Manual override
+GetWallThickness
+Signature: Double GetWallThickness(Guid wallId)
+Description: Gets the total thickness of a wall instance (sum of layers).
+Example: thickness = va.GetWallThickness(wall_id)
+GetWallLayerBottomOffset
+Signature: Double GetWallLayerBottomOffset(Guid wallId, Guid wallLayerId)
+Description: Gets the bottom offset for a layer in a wall instance (e.g., for stepped layers).
+Example: bottom_offset = va.GetWallLayerBottomOffset(wall_id, layer_id)
+SetWallLayerBottomOffset
+Signature: Boolean SetWallLayerBottomOffset(Guid wallId, Guid wallLayerId, Double offset)
+Description: Sets the bottom offset for a layer in a wall instance. Returns True on success.
+Example: success = va.SetWallLayerBottomOffset(wall_id, layer_id, -0.1) # e.g., lower by 10cm
+GetWallLayerBottomOffsetSource
+Signature: ValueSource GetWallLayerBottomOffsetSource(Guid wallId, Guid wallLayerId)
+Description: Gets the source for a layer's bottom offset in a wall instance.
+Example: source = va.GetWallLayerBottomOffsetSource(wall_id, layer_id)
+SetWallLayerBottomOffsetSource
+Signature: Boolean SetWallLayerBottomOffsetSource(Guid wallId, Guid wallLayerId, ValueSource source)
+Description: Sets the source for a layer's bottom offset in a wall instance. Returns True on success.
+Example: success = va.SetWallLayerBottomOffsetSource(wall_id, layer_id, va.ValueSource.Style)
+GetWallLayerTopOffset
+Signature: Double GetWallLayerTopOffset(Guid wallId, Guid wallLayerId)
+Description: Gets the top offset for a layer in a wall instance.
+Example: top_offset = va.GetWallLayerTopOffset(wall_id, layer_id)
+SetWallLayerTopOffset
+Signature: Boolean SetWallLayerTopOffset(Guid wallId, Guid wallLayerId, Double offset)
+Description: Sets the top offset for a layer in a wall instance. Returns True on success.
+Example: success = va.SetWallLayerTopOffset(wall_id, layer_id, 0.2) # e.g., extend by 20cm
+GetWallLayerTopOffsetSource
+Signature: ValueSource GetWallLayerTopOffsetSource(Guid wallId, Guid wallLayerId)
+Description: Gets the source for a layer's top offset in a wall instance.
+Example: source = va.GetWallLayerTopOffsetSource(wall_id, layer_id)
+SetWallLayerTopOffsetSource
+Signature: Boolean SetWallLayerTopOffsetSource(Guid wallId, Guid wallLayerId, ValueSource source)
+Description: Sets the source for a layer's top offset in a wall instance. Returns True on success.
+Example: success = va.SetWallLayerTopOffsetSource(wall_id, layer_id, va.ValueSource.Object)
+GetWallLayerOffset
+Signature: Double GetWallLayerOffset(Guid wallLayerId)
+Description: Gets the offset for a wall layer (likely style-level lateral offset for layers).
+Example: offset = va.GetWallLayerOffset(layer_id)
+ExtendWallToObject
+Signature: Boolean ExtendWallToObject(Guid wallId, WallExtendDirection direction, Guid objectId)
+Description: Extends the wall to intersect/touch another object (e.g., roof/slab) in the specified direction. Returns True on success.
+Example: success = va.ExtendWallToObject(wall_id, va.WallExtendDirection.Top, roof_id)
+Notes: ObjectId can be any Rhino object; wall updates dynamically.
+UnextendWallFromObject
+Signature: Boolean UnextendWallFromObject(Guid wallId, WallExtendDirection direction, Guid objectId)
+Description: Removes extension from a specific object. Returns True on success.
+Example: success = va.UnextendWallFromObject(wall_id, va.WallExtendDirection.Top, roof_id)
+UnextendWallFromAllObjects
+Signature: Boolean UnextendWallFromAllObjects(Guid wallId, WallExtendDirection direction)
+Description: Removes all extensions in the specified direction. Returns True on success.
+Example: success = va.UnextendWallFromAllObjects(wall_id, va.WallExtendDirection.Bottom)
+IsWallExtended
+Signature: Boolean IsWallExtended(Guid wallId, WallExtendDirection direction)
+Description: Checks if the wall is extended in the specified direction.
+Example: extended = va.IsWallExtended(wall_id, va.WallExtendDirection.Top)
+IsWallExtendedToObject
+Signature: Boolean IsWallExtendedToObject(Guid wallId, WallExtendDirection direction, Guid objectId)
+Description: Checks if the wall is extended to a specific object in the direction.
+Example: extended_to = va.IsWallExtendedToObject(wall_id, va.WallExtendDirection.Top, roof_id)
+GetWallExtensionObjects
+Signature: Guid[] GetWallExtensionObjects(Guid wallId, WallExtendDirection direction)
+Description: Gets array of Guids for objects the wall is extended to in the direction.
+Example: objects = va.GetWallExtensionObjects(wall_id, va.WallExtendDirection.Top)
+GetStyleComponentName
+Signature: String GetStyleComponentName(Guid componentId)
+Description: Gets the name of a style component (e.g., wall layer).
+Example: name = va.GetStyleComponentName(layer_id) print(name) # e.g., "Brick Layer"
+SetWallHeight
+Signatures (Overloads):
+Boolean SetWallHeight(Guid wallId, Double height)
+Boolean SetWallHeight(Guid wallId, Double height, ValueSource heightSource)
+Description: Sets the height for a wall instance, optionally with source (e.g., override style). Returns True on success.
+Example:
+ Basic
+ success = va.SetWallHeight(wall_id, 3.5)
+ With source
+ success = va.SetWallHeight(wall_id, 3.5, va.ValueSource.Object) # Manual override
+Notes: Use GetWallHeightSource to query source. ValueSource: None (inherited?), Object (manual), Style (from style).
+GetWallHeight
+Signature: Double GetWallHeight(Guid wallId)
+Description: Gets the height of a wall instance.
+Example: height = va.GetWallHeight(wall_id)
+GetWallHeightSource
+Signature: ValueSource GetWallHeightSource(Guid wallId)
+Description: Gets the height source for a wall instance (e.g., Object, Style).
+Example: source = va.GetWallHeightSource(wall_id) print(source) # e.g., Style
+GetWallPathCurve
+Signature: Curve GetWallPathCurve(Guid wallId)
+Description: Gets the path curve of a wall instance.
+Example: path = va.GetWallPathCurve(wall_id) rs.AddCurve(path) # Visualize in Rhino
+SetWallPathCurve
+Signature: Boolean SetWallPathCurve(Guid wallId, Curve curve)
+Description: Sets the path curve for a wall instance. Returns True on success.
+Example: new_curve = rs.AddLine((0,0,0), (10,0,0)) curve = rs.coercecurve(new_curve) success = va.SetWallPathCurve(wall_id, curve)
+Notes: Curve should be planar/open; updates geometry.
+IsWall
+Signature: Boolean IsWall(Guid id)
+Description: Checks if the Guid is a wall instance.
+Example: is_wall = va.IsWall(object_id)
+IsWallLayer
+Signature: Boolean IsWallLayer(Guid id)
+Description: Checks if the Guid is a wall layer component.
+Example: is_layer = va.IsWallLayer(component_id)
+IsWallStyle
+Signature: Boolean IsWallStyle(Guid id)
+Description: Checks if the Guid is a wall style.
+Example: is_style = va.IsWallStyle(style_id)
+GetWallStyleId
+Signature: Guid GetWallStyleId(String name)
+Description: Gets the Guid of a wall style by name.
+Example: style_id = va.GetWallStyleId("MyWall")
+Notes: Returns Guid.Empty if not found.
+DeleteStyle
+Signature: Boolean DeleteStyle(Guid styleId)
+Description: Deletes a style. Returns True on success.
+Example: success = va.DeleteStyle(style_id)
+Notes: May fail if style in use; use DeleteStyleComponent for components like layers.
+SetStyleComponentMaterialIndex: For assigning materials to style components like wall layers.
+Signature: Boolean SetStyleComponentMaterialIndex(Guid componentId, Int32 materialIndex)
+Description: Assigns a Rhino material index to a style component (e.g., wall layer). Returns True on success.
+Example: mat_index = rs.AddMaterial() # Create material first; returns index success = va.SetStyleComponentMaterialIndex(layer_id, mat_index)
+Notes: Material must exist in document. Use va.GetStyleComponentMaterialIndex(componentId) to query (returns Int32).
+GetWallLayers: To retrieve layers of a wall style.
+Signature: Guid[] GetWallLayers(Guid wallStyleId)
+Description: Returns array of Guids for all layers in the wall style (ordered exterior to interior).
+Example: layers = va.GetWallLayers(style_id) for layer in layers: print(va.GetStyleComponentName(layer)) # Get name
+Notes: Use with GetWallLayerThickness, SetWallLayerThickness, etc.
+Enums/Options Reference
+WallLayerWrapping: None (0), Ends (1), Openings (2) – [Flags]; combine e.g., Ends | Openings = 3 for both.
+WallLayerType: Normal (0), Core (1)
+WallAlignment: Left (0), Center (1), Right (2) – Relative to path.
+ValueSource: None (0), Object (1), Style (2) – For value inheritance (None=inherited/default, Object=manual, Style=from style).
+WallExtendDirection: Top (0), Bottom (1) – For extensions/offsets.
