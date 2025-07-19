@@ -1,0 +1,15 @@
+VisualARQ Python API Documentation
+Version: VisualARQ 3 in Rhino 7/8
+
+
+Notes: All methods are static in VisualARQ.Script. Guids are often used for IDs. Test in Rhino's EditPythonScript or Grasshopper Python component. Import: import VisualARQ.Script as va. From System import Guid; use Guid.Empty for checks. Materials: Use Rhino's rs.AddMaterial() and indices for assignments. Error Handling: Wrap calls in try/except for type mismatches. Many setters return Boolean (success/failure). Profiles are shared across objects like beams, columns, railings, openings. Opening methods are shared between doors and windows. For a complete list of methods, see the initial dir(va) output.
+General Usage
+Import: import VisualARQ.Script as va
+Guids: From System import Guid; use Guid.Empty for checks.
+Materials: Use Rhino's rs.AddMaterial() and indices for assignments.
+Error Handling: Wrap calls in try/except for type mismatches. Many setters return Boolean (success/failure).
+Profiles: Shared for beams, columns, railings, openings. Built-in templates (GetTemplate), custom via AddCurveProfileTemplate. Sizes set via SetProfileSize.
+Styles: Common methods like GetStyleName, RenameStyle, DeleteStyle, GetAll*StyleIds.
+Components: Use GetSubStyleComponents, GetParentStyleComponent, GetStyleComponentName, RenameStyleComponent, DeleteStyleComponent for sub-components (layers, leaves, etc.).
+Parameters: Use AddDocumentParameter, AddObjectParameter, GetParameterValue, SetParameterValue for custom params.
+Levels/Buildings: Use AddLevel, AddBuilding, GetLevelElevation, SetLevelElevation, etc., for multi-story management.
